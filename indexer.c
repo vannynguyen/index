@@ -46,7 +46,7 @@ int main(int argc, char* argv[])
 	char *directory;
 	char *resultsfile;
 
-    /*=======================================================================================================================*/
+    /*Program parameter processing===============================================================================================*/
     struct stat s;
     int err;
 	if (argc == 1 || strstr(argv[1],"--help")){
@@ -115,12 +115,127 @@ int main(int argc, char* argv[])
 	    	fprintf (stderr,"Rewrite file (%s) does not exist", argv[3]);
 	    	return 1;
 		}
-	}
-	
-	/*=======================================================================================================================*/
 
+		//store rewriting filename
+    	char *rewritingfile;
+    	rewritingfile=calloc(1,sizeof(char)*strlen(argv[3])+1);
+	}
+
+	/*=======================================================================================================================*/
 	
+	/*Initialize data structures, allocate Inverted_index, zero it, and set links to NULL.===================================*/
+
+	//store target directory name
 	directory=calloc(1,sizeof(char)*strlen(argv[0])+1);
     strcpy(directory,argv[0]);
+
+    //store resulting filename
+    resultsfile=calloc(1,sizeof(char)*strlen(argv[1])+1);
+
+    //HASHTABLE
+    HashTable *hash = calloc(1,sizeof(HashTable));
+
+    char **files=NULL;
+    int numOfFiles = GetFilenamesInDir(directory,&files);
+    char *currentfile;
+
+    for(int i=0;i<numOfFiles;i++){
+    	currentfile=files[i];
+    	
+    }
+
+
+
+
+
+
+    /*======================================================================================================================*/
+
+
 	return 0;
 }
+
+int getWords(char *docname){
+	int pos = 0;
+	char *word;
+ 	char *doc = docname;
+ 
+  	while((pos = GetNextWord(doc, pos, &word)) > 0) {
+    	// create new WordNode if word is not in HashTable and add to HashTable
+    	NormalizeWord(word);
+  		if(isInHash(hash,word)>MAX_HASH_SLOT){
+  			addToHashTable(word,hash);
+  		}
+  		//if word is in HashTable, increment occurence
+  		
+      	free(word);
+ 	 }
+	return 0;
+}
+
+//create new WordNode, return pointer to new WordNode
+WordNode* makeWordNode(char *wp){
+
+    WordNode *node = calloc(1,sizeof(WordNode));
+  	node->word = calloc(1,sizeof(char)*strlen(wp));
+	strcpy(node->word,wp);
+	node->next=NULL;
+    
+    return node;
+}
+
+//check to see if word is in HashTable
+int isInHash(HashTable *table, char *wp){
+	WordNode *node;
+	unsigned long hashIndex = JenkinsHash(wp,MAX_HASH_SLOT);
+
+	if(!wp || !hash){
+        return MAX_HASH_SLOT*2;
+    }
+
+    node = hash->table[hashIndex];
+
+    if (!node){
+        return MAX_HASH_SLOT*2;
+    }
+
+    while (node){
+        if (!strcmp(node->word,wp)){
+            return hashIndex;
+        }
+        node = node->next;
+    }
+    return MAX_HASH_SLOT*2;
+}
+
+//add node to HashTable
+int addToHashTable(char *wp, HashTable *hash){
+    WordNode *node;
+    WordNode *newNode;
+    unsigned long hashIndex = JenkinsHash(wp,MAX_HASH_SLOT);
+    if(!wp || !hash){
+        return 1;
+    }
+
+    node = hash->table[hashIndex];
+
+    //node does not already exist in HashTable at current hashindex
+    if (!node){
+        newNode=makeWordNode(wp);
+        hash->table[hashIndex] = newNode;
+        return 0;
+    }
+
+    //node currently exists at current index; traverse till empty spot
+    while(node){
+        if(!node->next){
+            newNode = makeWordNode(wp);
+            node->next = newNode;
+            return 0;
+        }
+        node = node->next;
+    }
+    return 1;
+}
+
+

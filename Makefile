@@ -2,10 +2,10 @@ CC= gcc
 CFLAGS= -Wall -std=c11 -pedantic -g
 
 
-indexer: indexer.o hashtable.o web.o list.o
-	$(CC) $(CFLAGS) -o indexer indexer.o hashtable.o web.o list.o -lcurl -lm
+indexer: indexer.o hashtable.o web.o list.o file.o
+	$(CC) $(CFLAGS) -o indexer indexer.o hashtable.o web.o list.o file.o -lcurl -lm
 
-indexer.o: indexer.c common.h hashtable.h list.h utils.h web.h
+indexer.o: indexer.c common.h hashtable.h list.h utils.h web.h file.h
 	$(CC) $(CFLAGS) -c indexer.c
 
 hashtable.o: hashtable.c hashtable.h
@@ -16,6 +16,9 @@ web.o: web.c web.h
 
 list.o: list.c list.h
 	$(CC) $(CFLAGS) -c list.c
+
+file.o:	file.c file.h
+	$(CC) $(CFLAGS) -c file.c
 
 
 

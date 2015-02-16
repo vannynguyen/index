@@ -19,13 +19,9 @@
 
 // ---------------- Structures/Types
 
-typedef struct HashTableNode {
-    char *url;                               // url previously seen
-    struct HashTableNode *next;              // pointer to next node
-} HashTableNode;
 
 typedef struct HashTable {
-    HashTableNode *table[MAX_HASH_SLOT];     // actual hashtable
+    WordNode *table[MAX_HASH_SLOT];     // actual hashtable
 } HashTable;
 
 // ---------------- Public Variables
