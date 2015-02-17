@@ -41,6 +41,13 @@
 // ---------------- Private prototypes 
 
 /*====================================================================*/
+int buildIndex(char *docname);
+WordNode* makeWordNode(char *wp);
+int isInHash(HashTable *table, char *wp);
+int addToHashTable(char *wp, HashTable *hash, WordNode *wnp);
+int hasCurrentDoc(WordNode *wp, char *docn);
+DocumentNode* makeDocumentNode(char *docn);
+DocumentNode* getDocumentNode(WordNode *wnode,char *docn);
 int main(int argc, char* argv[])
 {	char c;
 	char *directory;
@@ -139,7 +146,7 @@ int main(int argc, char* argv[])
     int numOfFiles = GetFilenamesInDir(directory,&files);
 
     for(int i=0;i<numOfFiles;i++){
-    	getWords(files[i]);
+    	buildIndex(files[i]);
     }
 
 
@@ -154,11 +161,11 @@ int main(int argc, char* argv[])
 }
 
 /**
-* getWords- Extract words from doc, store them into appropriate nodes and HashTable
+* buildIndex- Extract words from doc, store them into appropriate nodes and HashTable
 * @docname- name of document to extract
 * return: 0 on completion
 **/
-int getWords(char *docname){
+int buildIndex(char *docname){
 	int pos = 0;
 	char *word;
  	char *doc = docname;
