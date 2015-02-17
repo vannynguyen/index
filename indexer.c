@@ -49,8 +49,12 @@ int isInHash(HashTable *hash, char *wp);
 int addToHashTable(char *wp, HashTable *hash, WordNode *wnp);
 int hasCurrentDoc(WordNode *wp, char *docn);
 DocumentNode* makeDocumentNode(char *docn);
+DocumentNode* remakeDocumentNode(char *docn, int frequency);
 int addDocumentNode(WordNode *wnode,DocumentNode *doc);
+DocumentNode* remakeDocumentNode(char *docn, int frequency);
 DocumentNode* getDocumentNode(WordNode *wnode,char *docn);
+void freeHashNodes(HashTable *hash);
+void reinitialize(char *datfile,HashTable *hash);
 
 char* loadFile(FILE *fp);
 
@@ -134,7 +138,6 @@ int main(int argc, char* argv[])
     	rewritingfile=calloc(1,sizeof(char)*strlen(argv[3])+1);
 	}
 
-	/*=======================================================================================================================*/
 	
 	/*Initialize data structures, allocate Inverted_index ===================================================================*/
 
@@ -171,7 +174,25 @@ int main(int argc, char* argv[])
     save(resultsfile,hash);
     
     /*CleanDynamicList ======================================================================================================================*/
-    
+    freeHashNodes(hash);
+    free(directory);
+
+    /*Testing mode ===================================================================================================================*/
+    if(argc!=4){
+    	return 0;
+    }
+
+    //New HashTable/Inverted Index
+    HashTable *hash = calloc(1,sizeof(HashTable));
+
+    //Reload the index from the file and rewrite it to a new file
+    reinitialize(resultsfile,hash);
+    save(rewritingfile,hash);
+
+    /*CleanDynamicList ======================================================================================================================*/
+    freeHashNodes(hash);
+    free(resultsfile);
+    free(rewritingfile);
 
 	return 0;
 }
@@ -185,7 +206,7 @@ int buildIndex(char *docname, HashTable *hash){
 	int pos = 0;
 	char *word;
 	FILE *fp = fopen(docname,"r");
- 	char *doc = loadFile(fp); //THIS SHOULD BE THE HTML OF THE FILE YOU IDIOT
+ 	char *doc = loadFile(fp); //HTML OF THE FILE
  	WordNode *wNode;
  	DocumentNode *docnode;
 
@@ -215,7 +236,36 @@ int buildIndex(char *docname, HashTable *hash){
   		}
       	free(word);
  	 }
+
+ 	 free(doc);
 	return 0;
+}
+
+/** reinitialize- rebuild InvertedIndex based off given datfile
+*	@datfile- datafile to read
+*	@hash- HashTable to use
+**/
+void reinitialize(char *datfile,HashTable *hash){
+	FILE *fp = fopen(datfile,"r");
+	char *wp;
+	WordNode *wnode;
+	DocumentNode *dnode;
+	int *docnum;
+	int *wfreq;
+
+	//read file line-by-line
+	while (!feof(fp)){
+		//store word for WordNode
+		fscanf(fp,"%s",wp);
+		wnode=makeWordNode(wp);
+		addToHashTable(wp,hash,wnode);
+		//read ints till end of line
+		while(fscanf(fp,"%d %d",docnum,wfreq)==2){
+			dnode=remakeDocumentNode(docnum,wfreq);
+			addDocumentNode(wnode,dnode);
+		}
+	}
+	fclose(fp);
 }
 
 /**save- save output to file
@@ -386,6 +436,19 @@ DocumentNode* makeDocumentNode(char *docn){
 }
 
 /**
+* remakeDocumentNode- create new DocumentNode
+* @docn: number of document
+* return: pointer to new document
+**/
+DocumentNode* remakeDocumentNode(char *docn, int frequency){
+	DocumentNode *node = calloc(1,sizeof(DocumentNode));
+  	node->doc_id = atoi(docn);
+  	node->freq=frequency;
+	node->next=NULL;
+    return node;
+}
+
+/**
 * getDocumentNode- retrieve document within WordNode based on number
 * @wnode: WordNode to search
 * @docn: Document with number to find
@@ -428,7 +491,9 @@ int addDocumentNode(WordNode *wp, DocumentNode *d){
 
 	return 0;
 }
-
+/** loadfile- prepare string buffer from file
+*	@fp- file to be read
+**/
 char* loadFile(FILE *fp){
   long lSize;
   char* buffer;
@@ -465,4 +530,33 @@ char* loadFile(FILE *fp){
   fclose(fp);
   return buffer;
 }
+/**freeHashNodes- free Index from memory
+*  @hash- HashTable to free
+**/
+void freeHashNodes(HashTable *hash){
+    WordNode *wnode;
+    WordNode *wnext;
+    DocumentNode *dnode;
+    DocumentNode *dnext;
+
+    for(int i=0;i<MAX_HASH_SLOT;i++){
+        wnode=hash->table[i];
+        while(wnode){
+              dnode=wnode->page;
+              while(dnode){
+              	dnext = dnode->next;
+              	free(dnode);
+              	dnode = dnext;
+              }
+              free(wnode->word);
+              wnext = wnode->next;
+              free(wnode);
+              wnode = wnext;
+
+        }
+    }
+    free(hash);
+}
+
+
 
