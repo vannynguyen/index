@@ -137,11 +137,9 @@ int main(int argc, char* argv[])
 
     char **files=NULL;
     int numOfFiles = GetFilenamesInDir(directory,&files);
-    char *currentfile;
 
     for(int i=0;i<numOfFiles;i++){
-    	currentfile=files[i];
-    	
+    	getWords(files[i]);
     }
 
 
@@ -155,26 +153,40 @@ int main(int argc, char* argv[])
 	return 0;
 }
 
+/**
+* getWords- Extract words from doc, store them into appropriate nodes and HashTable
+* @docname- name of document to extract
+* return: 0 on completion
+**/
 int getWords(char *docname){
 	int pos = 0;
 	char *word;
  	char *doc = docname;
- 
+ 	WordNode *wNode;
+ 	DocumentNode *docnode;
   	while((pos = GetNextWord(doc, pos, &word)) > 0) {
     	// create new WordNode if word is not in HashTable and add to HashTable
     	NormalizeWord(word);
   		if(isInHash(hash,word)>MAX_HASH_SLOT){
-  			WordNode *newNode=makeWordNode(word);
-  			addToHashTable(word,hash,newNode);
+  			wNode=makeWordNode(word);
+  			addToHashTable(word,hash,wNode);
   		}
-  		//if word is in HashTable, increment occurence
+  		//else, if word is in HashTable, set to correct pointer
+  		else{
+  			wNode=getWordNode(word);
+  		}
+
   		//check if current doc node exists
-  		if(hasCurrentDoc){
+  		if(hasCurrentDoc(wNode,doc)){
+  			//does exist, increment frequency
+  			docnode=getDocumentNode(wNode,doc);
+  			docnode->freq++;
 
   		}
   		else{
-  			makeDocumentNode(docname);
-
+  			//does not exist, create new Document node
+  			docnode=makeDocumentNode(doc);
+  			wNode->page=docnode;
   		}
       	free(word);
  	 }
