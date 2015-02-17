@@ -29,7 +29,7 @@
 #include "list.h"                            // webpage list functionality
 #include "hashtable.h"                       // hashtable functionality
 #include "utils.h"                           // utility stuffs
-
+#include "file.h"
 // ---------------- Constant definitions 
 
 // ---------------- Macro definitions
@@ -41,13 +41,15 @@
 // ---------------- Private prototypes 
 
 /*====================================================================*/
-int buildIndex(char *docname);
+int buildIndex(char *docname,HashTable *hash);
 WordNode* makeWordNode(char *wp);
-int isInHash(HashTable *table, char *wp);
+WordNode* getWordNode(char *wp,HashTable *hash);
+int isInHash(HashTable *hash, char *wp);
 int addToHashTable(char *wp, HashTable *hash, WordNode *wnp);
 int hasCurrentDoc(WordNode *wp, char *docn);
 DocumentNode* makeDocumentNode(char *docn);
 DocumentNode* getDocumentNode(WordNode *wnode,char *docn);
+
 int main(int argc, char* argv[])
 {	char c;
 	char *directory;
@@ -130,7 +132,7 @@ int main(int argc, char* argv[])
 
 	/*=======================================================================================================================*/
 	
-	/*Initialize data structures, allocate Inverted_index, zero it, and set links to NULL.===================================*/
+	/*Initialize data structures, allocate Inverted_index ===================================================================*/
 
 	//store target directory name
 	directory=calloc(1,sizeof(char)*strlen(argv[0])+1);
@@ -146,13 +148,8 @@ int main(int argc, char* argv[])
     int numOfFiles = GetFilenamesInDir(directory,&files);
 
     for(int i=0;i<numOfFiles;i++){
-    	buildIndex(files[i]);
+    	buildIndex(files[i],hash);
     }
-
-
-
-
-
 
     /*======================================================================================================================*/
 
@@ -165,7 +162,7 @@ int main(int argc, char* argv[])
 * @docname- name of document to extract
 * return: 0 on completion
 **/
-int buildIndex(char *docname){
+int buildIndex(char *docname, HashTable *hash){
 	int pos = 0;
 	char *word;
  	char *doc = docname;
@@ -180,7 +177,7 @@ int buildIndex(char *docname){
   		}
   		//else, if word is in HashTable, set to correct pointer
   		else{
-  			wNode=getWordNode(word);
+  			wNode=getWordNode(word,hash);
   		}
 
   		//check if current doc node exists
@@ -217,7 +214,7 @@ WordNode* makeWordNode(char *wp){
 *	@wp-Word of WordNode pointer to retrieve from HashTable
 *	return: pointer to WordNode
 **/
-WordNode* getWordNode(char *wp){
+WordNode* getWordNode(char *wp, HashTable *hash){
 	WordNode *getNode;
 	unsigned long hashIndex = JenkinsHash(wp,MAX_HASH_SLOT);
 	getNode=hash->table[hashIndex];
@@ -229,7 +226,7 @@ WordNode* getWordNode(char *wp){
 *	@wp-word to check if in HashTable
 *	return: MAX_HASH_SLOT*2 if not found, hashIndex otherwise
 **/
-int isInHash(HashTable *table, char *wp){
+int isInHash(HashTable *hash, char *wp){
 	WordNode *node;
 	unsigned long hashIndex = JenkinsHash(wp,MAX_HASH_SLOT);
 
