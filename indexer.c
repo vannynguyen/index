@@ -164,27 +164,52 @@ int getWords(char *docname){
     	// create new WordNode if word is not in HashTable and add to HashTable
     	NormalizeWord(word);
   		if(isInHash(hash,word)>MAX_HASH_SLOT){
-  			addToHashTable(word,hash);
+  			WordNode *newNode=makeWordNode(word);
+  			addToHashTable(word,hash,newNode);
   		}
   		//if word is in HashTable, increment occurence
-  		
+  		//check if current doc node exists
+  		if(hasCurrentDoc){
+
+  		}
+  		else{
+  			makeDocumentNode(docname);
+
+  		}
       	free(word);
  	 }
 	return 0;
 }
 
-//create new WordNode, return pointer to new WordNode
+/**makeWordNode- create new WordNode, return pointer to new WordNode
+*	@wp-word to put inside new WordNode
+*	return: pointer to new WordNode
+**/
 WordNode* makeWordNode(char *wp){
-
     WordNode *node = calloc(1,sizeof(WordNode));
   	node->word = calloc(1,sizeof(char)*strlen(wp));
 	strcpy(node->word,wp);
 	node->next=NULL;
-    
+    node->page=NULL;
     return node;
 }
 
-//check to see if word is in HashTable
+/**getWordNode- retrieve pointer from HashTable
+*	@wp-Word of WordNode pointer to retrieve from HashTable
+*	return: pointer to WordNode
+**/
+WordNode* getWordNode(char *wp){
+	WordNode *getNode;
+	unsigned long hashIndex = JenkinsHash(wp,MAX_HASH_SLOT);
+	getNode=hash->table[hashIndex];
+	return getNode;
+}
+
+/**isInHash- check to see if word is in HashTable
+*	@table-HashTable to check
+*	@wp-word to check if in HashTable
+*	return: MAX_HASH_SLOT*2 if not found, hashIndex otherwise
+**/
 int isInHash(HashTable *table, char *wp){
 	WordNode *node;
 	unsigned long hashIndex = JenkinsHash(wp,MAX_HASH_SLOT);
@@ -208,8 +233,13 @@ int isInHash(HashTable *table, char *wp){
     return MAX_HASH_SLOT*2;
 }
 
-//add node to HashTable
-int addToHashTable(char *wp, HashTable *hash){
+/** addToHashTable- add node to HashTable
+*	@wp-word to check if HashTable already contains
+*	@hash-HashTable to add to
+*	@wnp-WordNode to add to HashTable
+*	return: 0 on success, 1 otherwise
+**/
+int addToHashTable(char *wp, HashTable *hash, WordNode *wnp){
     WordNode *node;
     WordNode *newNode;
     unsigned long hashIndex = JenkinsHash(wp,MAX_HASH_SLOT);
@@ -221,7 +251,7 @@ int addToHashTable(char *wp, HashTable *hash){
 
     //node does not already exist in HashTable at current hashindex
     if (!node){
-        newNode=makeWordNode(wp);
+        newNode=wnp;
         hash->table[hashIndex] = newNode;
         return 0;
     }
@@ -229,13 +259,74 @@ int addToHashTable(char *wp, HashTable *hash){
     //node currently exists at current index; traverse till empty spot
     while(node){
         if(!node->next){
-            newNode = makeWordNode(wp);
+            newNode = wnp;
             node->next = newNode;
             return 0;
         }
         node = node->next;
     }
     return 1;
+}
+
+
+/**
+* hasCurrentDoc- check if WordNode has current DocumentNode
+* @wp- WordNode to search
+* @docn- Document number
+* return- 1 if DocumentNode is within WordNode, 0 if not
+**/
+int hasCurrentDoc(WordNode *wp, char *docn){
+	WordNode *node = wp;
+	DocumentNode *doc;
+
+	doc = node->page;
+
+	//if doc is null
+	if(!doc){
+		return 0;
+	}
+
+	while(doc){
+		//doc is same number as current docnode
+		if(doc->doc_id==atoi(docn)){
+			return 1;
+		}
+			
+		doc=doc->next;
+	}
+
+	return 0;
+}
+
+/**
+* makeDocumentNode- create new DocumentNode
+* @docn: number of document
+* return: pointer to new document
+**/
+DocumentNode* makeDocumentNode(char *docn){
+	DocumentNode *node = calloc(1,sizeof(DocumentNode));
+  	node->doc_id = atoi(docn);
+  	node->freq=1;
+	node->next=NULL;
+    return node;
+}
+
+/**
+* getDocumentNode- retrieve document within WordNode based on number
+* @wnode: WordNode to search
+* @docn: Document with number to find
+* return: Pointer to document with matching number
+**/
+DocumentNode* getDocumentNode(WordNode *wnode,char *docn){
+	DocumentNode *getNode;
+	getNode=wnode->page;
+	while(getNode){
+		if(getNode->doc_id==atoi(docn)){
+			return getNode;
+		}
+		getNode=getNode->next;
+	}
+	return getNode;
 }
 
 
