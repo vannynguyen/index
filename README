@@ -1,0 +1,7 @@
+Instructions to compile/run (execute in order):
+
+make clean
+make
+./indexer [TARGET DIRECTORY] [RESULTING FILE] [RESULTING FILE] [REWRITE FILE]
+
+Used to count frequency of words in files within given directory. Takes two or four arguments. If given only first two arguments, program will store the words and frequencies in the resulting file. If given all four arguments, program wioperate in the same manner, additionally rereading the resulting file, reconstructing the data structures, and storing the output in the rewrite file to test for equivalency. 

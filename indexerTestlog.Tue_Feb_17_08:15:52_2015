@@ -1,4 +1,4 @@
-START DATE: Tue_Feb_17_05:50:50_2015
+START DATE: Tue_Feb_17_08:15:52_2015
 User: vannynguyen OS: Darwin
 
 Test argument verification: bad directory
@@ -21,6 +21,6 @@ New Index saved in new_index.dat
 Sorting both files...
 Test equality of files: Index storage passed test!
 
-END DATE: Tue_Feb_17_05:50:50_2015
+END DATE: Tue_Feb_17_08:15:52_2015
 
 

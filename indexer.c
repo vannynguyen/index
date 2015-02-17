@@ -177,7 +177,9 @@ int main(int argc, char* argv[])
 
     /*Testing mode ===================================================================================================================*/
     if(argc!=4){
-    	return 0;
+    	free(resultsfile);
+      free(rewritingfile);
+      return 0;
     }
     else{
 
@@ -193,6 +195,7 @@ int main(int argc, char* argv[])
     free(resultsfile);
     free(rewritingfile);
 	}
+    
 	return 0;
 }
 
@@ -233,10 +236,12 @@ int buildIndex(char *docname, HashTable *hash){
   			docnode=makeDocumentNode(docname);
   			addDocumentNode(wNode,docnode);
   		}
-      	free(word);
+      
+      free(word);
  	 }
 
  	 free(doc);
+
 	return 0;
 }
 
@@ -510,7 +515,7 @@ int addDocumentNode(WordNode *wp, DocumentNode *d){
 **/
 char* loadFile(FILE *fp){
   long lSize;
-  char* buffer;
+  char *buffer = NULL;
   size_t result;
 
   if (!fp) {
@@ -524,7 +529,7 @@ char* loadFile(FILE *fp){
   rewind (fp);
 
   // allocate memory to contain the whole file:
-  buffer = (char*) malloc (sizeof(char)*lSize);
+  buffer = calloc (1,sizeof(char)*lSize+1);
   if (!buffer) {
   	fprintf(stderr, "UNABLE TO ALLOCATE BUFFER\n");
   	fclose(fp);
