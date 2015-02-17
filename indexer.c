@@ -49,9 +49,8 @@ int isInHash(HashTable *hash, char *wp);
 int addToHashTable(char *wp, HashTable *hash, WordNode *wnp);
 int hasCurrentDoc(WordNode *wp, char *docn);
 DocumentNode* makeDocumentNode(char *docn);
-DocumentNode* remakeDocumentNode(char *docn, int frequency);
 int addDocumentNode(WordNode *wnode,DocumentNode *doc);
-DocumentNode* remakeDocumentNode(char *docn, int frequency);
+DocumentNode* remakeDocumentNode(int docn, int frequency);
 DocumentNode* getDocumentNode(WordNode *wnode,char *docn);
 void freeHashNodes(HashTable *hash);
 void reinitialize(char *datfile,HashTable *hash);
@@ -62,7 +61,7 @@ int main(int argc, char* argv[])
 {	char c;
 	char *directory;
 	char *resultsfile;
-
+	char *rewritingfile;
     /*Program parameter processing===============================================================================================*/
     struct stat s;
     int err;
@@ -134,8 +133,8 @@ int main(int argc, char* argv[])
 		}
 
 		//store rewriting filename
-    	char *rewritingfile;
     	rewritingfile=calloc(1,sizeof(char)*strlen(argv[3])+1);
+      strcpy(rewritingfile,argv[3]);
 	}
 
 	
@@ -162,7 +161,6 @@ int main(int argc, char* argv[])
     	
     	
     	if(strcmp(files[i],".DS_Store")){ //catch exception for .DS_Store	
-    		printf("DOCUMENT #%s\n",files[i]);
     		buildIndex(files[i],hash);
     	}
     	
@@ -181,6 +179,7 @@ int main(int argc, char* argv[])
     if(argc!=4){
     	return 0;
     }
+    else{
 
     //New HashTable/Inverted Index
     HashTable *hash = calloc(1,sizeof(HashTable));
@@ -193,7 +192,7 @@ int main(int argc, char* argv[])
     freeHashNodes(hash);
     free(resultsfile);
     free(rewritingfile);
-
+	}
 	return 0;
 }
 
@@ -247,25 +246,40 @@ int buildIndex(char *docname, HashTable *hash){
 **/
 void reinitialize(char *datfile,HashTable *hash){
 	FILE *fp = fopen(datfile,"r");
-	char *wp;
+	char wp[256];
 	WordNode *wnode;
 	DocumentNode *dnode;
-	int *docnum;
-	int *wfreq;
+	int docnum;
+	int wfreq;
 
 	//read file line-by-line
 	while (!feof(fp)){
 		//store word for WordNode
-		fscanf(fp,"%s",wp);
+		if(fscanf(fp,"%s",wp)==1){
+
+
+		
+
+		//printf("%s ",wp);
 		wnode=makeWordNode(wp);
 		addToHashTable(wp,hash,wnode);
 		//read ints till end of line
-		while(fscanf(fp,"%d %d",docnum,wfreq)==2){
+		while(fscanf(fp,"%d %d",&docnum,&wfreq)==2){
+			//printf("%d %d ", docnum,wfreq);
 			dnode=remakeDocumentNode(docnum,wfreq);
 			addDocumentNode(wnode,dnode);
 		}
+
+		//printf("\n");
+
 	}
+
+
+	}
+
+
 	fclose(fp);
+	return;
 }
 
 /**save- save output to file
@@ -307,7 +321,7 @@ int save(char *file,HashTable *hash){
 **/
 WordNode* makeWordNode(char *wp){
     WordNode *node = calloc(1,sizeof(WordNode));
-  	node->word = calloc(1,sizeof(char)*strlen(wp));
+  	node->word = calloc(1,sizeof(char)*strlen(wp)+1);
 	strcpy(node->word,wp);
 	node->next=NULL;
     node->page=NULL;
@@ -440,9 +454,9 @@ DocumentNode* makeDocumentNode(char *docn){
 * @docn: number of document
 * return: pointer to new document
 **/
-DocumentNode* remakeDocumentNode(char *docn, int frequency){
+DocumentNode* remakeDocumentNode(int docn, int frequency){
 	DocumentNode *node = calloc(1,sizeof(DocumentNode));
-  	node->doc_id = atoi(docn);
+  	node->doc_id = docn;
   	node->freq=frequency;
 	node->next=NULL;
     return node;

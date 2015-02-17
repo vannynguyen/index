@@ -1,0 +1,26 @@
+START DATE: Tue_Feb_17_05:50:50_2015
+User: vannynguyen OS: Darwin
+
+Test argument verification: bad directory
+Result: Error: Directory does not exist
+
+Test argument verification: different resulting files
+Result: Error: resulting file names do not match
+
+Test argument verification: incorrect amount of arguments
+Result: Error: insufficient arguments
+
+Test with correct parameters
+
+Initializing InvertedIndex...
+Index saved in index.dat
+
+Reinitializing InvertedIndex...
+New Index saved in new_index.dat
+
+Sorting both files...
+Test equality of files: Index storage passed test!
+
+END DATE: Tue_Feb_17_05:50:50_2015
+
+
