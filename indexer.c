@@ -42,13 +42,17 @@
 
 /*====================================================================*/
 int buildIndex(char *docname,HashTable *hash);
+int save(char *file,HashTable *hash);
 WordNode* makeWordNode(char *wp);
 WordNode* getWordNode(char *wp,HashTable *hash);
 int isInHash(HashTable *hash, char *wp);
 int addToHashTable(char *wp, HashTable *hash, WordNode *wnp);
 int hasCurrentDoc(WordNode *wp, char *docn);
 DocumentNode* makeDocumentNode(char *docn);
+int addDocumentNode(WordNode *wnode,DocumentNode *doc);
 DocumentNode* getDocumentNode(WordNode *wnode,char *docn);
+
+char* loadFile(FILE *fp);
 
 int main(int argc, char* argv[])
 {	char c;
@@ -140,6 +144,7 @@ int main(int argc, char* argv[])
 
     //store resulting filename
     resultsfile=calloc(1,sizeof(char)*strlen(argv[1])+1);
+    strcpy(resultsfile,argv[1]);
 
     //HASHTABLE
     HashTable *hash = calloc(1,sizeof(HashTable));
@@ -147,12 +152,26 @@ int main(int argc, char* argv[])
     char **files=NULL;
     int numOfFiles = GetFilenamesInDir(directory,&files);
 
+    if(chdir(directory)){
+    	return 6;
+    }
     for(int i=0;i<numOfFiles;i++){
-    	buildIndex(files[i],hash);
+    	
+    	
+    	if(strcmp(files[i],".DS_Store")){ //catch exception for .DS_Store	
+    		printf("DOCUMENT #%s\n",files[i]);
+    		buildIndex(files[i],hash);
+    	}
+    	
+
     }
 
-    /*======================================================================================================================*/
-
+    /*save file =============================================================================================================*/
+    chdir("..");
+    save(resultsfile,hash);
+    
+    /*CleanDynamicList ======================================================================================================================*/
+    
 
 	return 0;
 }
@@ -165,9 +184,11 @@ int main(int argc, char* argv[])
 int buildIndex(char *docname, HashTable *hash){
 	int pos = 0;
 	char *word;
- 	char *doc = docname;
+	FILE *fp = fopen(docname,"r");
+ 	char *doc = loadFile(fp); //THIS SHOULD BE THE HTML OF THE FILE YOU IDIOT
  	WordNode *wNode;
  	DocumentNode *docnode;
+
   	while((pos = GetNextWord(doc, pos, &word)) > 0) {
     	// create new WordNode if word is not in HashTable and add to HashTable
     	NormalizeWord(word);
@@ -181,22 +202,55 @@ int buildIndex(char *docname, HashTable *hash){
   		}
 
   		//check if current doc node exists
-  		if(hasCurrentDoc(wNode,doc)){
+  		if(hasCurrentDoc(wNode,docname)){
   			//does exist, increment frequency
-  			docnode=getDocumentNode(wNode,doc);
+  			docnode=getDocumentNode(wNode,docname);
   			docnode->freq++;
 
   		}
   		else{
   			//does not exist, create new Document node
-  			docnode=makeDocumentNode(doc);
-  			wNode->page=docnode;
+  			docnode=makeDocumentNode(docname);
+  			addDocumentNode(wNode,docnode);
   		}
       	free(word);
  	 }
 	return 0;
 }
 
+/**save- save output to file
+*	@file-file to save to
+*	return: 0 in success;
+**/
+int save(char *file,HashTable *hash){
+	FILE *fp = fopen(file,"w");
+	WordNode *wnode;
+	DocumentNode *doc;
+
+	//traverse HashTable
+	if (!fp){
+		fprintf(stderr, "UNABLE TO OPEN FILE\n");
+		return 1;
+	}
+	for(int i=0;i<MAX_HASH_SLOT;i++){
+
+		wnode=hash->table[i];
+		//traverse WordNodes at slot
+		while(wnode){
+			fprintf(fp, "%s ",wnode->word);
+			doc=wnode->page;
+			//traverse DocumentNodes
+			while(doc){
+				fprintf(fp, "%d %d ", doc->doc_id, doc->freq);
+				doc=doc->next;
+			}
+			fprintf(fp, "\n");
+			wnode=wnode->next;
+		}
+	}
+	fclose(fp);
+	return 0;
+}
 /**makeWordNode- create new WordNode, return pointer to new WordNode
 *	@wp-word to put inside new WordNode
 *	return: pointer to new WordNode
@@ -218,6 +272,10 @@ WordNode* getWordNode(char *wp, HashTable *hash){
 	WordNode *getNode;
 	unsigned long hashIndex = JenkinsHash(wp,MAX_HASH_SLOT);
 	getNode=hash->table[hashIndex];
+	
+	while(!strcmp(getNode->word,wp) && getNode->next){
+		getNode=getNode->next;
+	}
 	return getNode;
 }
 
@@ -345,4 +403,66 @@ DocumentNode* getDocumentNode(WordNode *wnode,char *docn){
 	return getNode;
 }
 
+/**addDocumentNode- add DocumentNode to given WordNode
+*	@wp- WordNode to place DocumentNode
+*	@d- DocumentNode to place
+*	return- 0 on success
+**/
+int addDocumentNode(WordNode *wp, DocumentNode *d){
+	WordNode *wnode = wp;
+	DocumentNode *doc = d;
+	DocumentNode *lastdoc= wnode->page;
+	
+	
+	if(!lastdoc){
+		wnode->page=doc;
+		return 0;
+	}
+
+
+	//while not last doc node
+	while(lastdoc->next){
+		lastdoc=lastdoc->next;
+	}
+	lastdoc->next=doc;
+
+	return 0;
+}
+
+char* loadFile(FILE *fp){
+  long lSize;
+  char* buffer;
+  size_t result;
+
+  if (!fp) {
+  	fprintf(stderr, "UNABLE TO READ FILE\n");
+  	return NULL;
+  }
+
+  // obtain file size:
+  fseek (fp, 0 , SEEK_END);
+  lSize = ftell(fp);
+  rewind (fp);
+
+  // allocate memory to contain the whole file:
+  buffer = (char*) malloc (sizeof(char)*lSize);
+  if (!buffer) {
+  	fprintf(stderr, "UNABLE TO ALLOCATE BUFFER\n");
+  	fclose(fp);
+  	return NULL;
+  }
+
+  // copy the file into the buffer:
+  result = fread(buffer,1,lSize,fp);
+  if (result != lSize) {
+  	fprintf(stderr, "UNABLE TO COPY FILE CONTENTS\n");
+  	return NULL;
+  }
+
+  /* the whole file is now loaded in the memory buffer. */
+
+  // terminate
+  fclose(fp);
+  return buffer;
+}
 
